@@ -36,4 +36,12 @@ define Package/amprd/install
 		$(1)/usr/sbin/
 endef
 
+# musl libc compatibility: UDP fields have different names
+PKG_BUILD_FLAGS += no-mips16
+PKG_BUILD_PARALLEL := 1
+
+# musl libc compatibility: UDP fields have different names
+PKG_BUILD_FLAGS += no-mips16
+PKG_BUILD_PARALLEL := 1
+
 $(eval $(call BuildPackage,amprd))
