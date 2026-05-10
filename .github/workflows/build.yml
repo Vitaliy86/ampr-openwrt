@@ -1,4 +1,4 @@
-name: OpenWrt 25 APK Build (AMPR)
+name: OpenWrt 25 AMPR APK Build (Parallel)
 
 on:
   push:
@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y \
@@ -31,14 +31,11 @@ jobs:
         run: |
           tar --zstd -xf openwrt-sdk-*.tar.zst
 
-      - name: Detect SDK path
+      - name: Detect SDK
         run: |
           echo "SDK_DIR=$(find . -maxdepth 1 -type d -name 'openwrt-sdk-*')" >> $GITHUB_ENV
 
-      # ─────────────────────────────
-      # КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: FEED
-      # ─────────────────────────────
-      - name: Add local feed (AMPR repo)
+      - name: Add AMPR feed
         run: |
           echo "src-link ampr $GITHUB_WORKSPACE" >> $SDK_DIR/feeds.conf.default
 
@@ -47,32 +44,32 @@ jobs:
           cd $SDK_DIR
           ./scripts/feeds update ampr
 
-      - name: Install packages from feed
+      - name: Install feed packages
         run: |
           cd $SDK_DIR
           ./scripts/feeds install -a -p ampr
 
-      - name: Prepare build config
+      - name: Configure build system
         run: |
           cd $SDK_DIR
           make defconfig
 
       # ─────────────────────────────
-      # СБОРКА ПАРАЛЛЕЛЬНО
+      # PARALLEL BUILD (key part)
       # ─────────────────────────────
-      - name: Build all AMPR packages (parallel)
+      - name: Build AMPR packages in parallel
         run: |
           cd $SDK_DIR
 
           make package/amprd/compile \
-            package/ampr-ripd/compile \
-            V=s -j$(nproc)
+               package/ampr-ripd/compile \
+               -j$(nproc) V=s
 
-      - name: Show artifacts
+      - name: Collect artifacts
         run: |
           find $SDK_DIR/bin/packages/ -type f -name "*.apk"
 
-      - name: Upload APK packages
+      - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ampr-openwrt-apk
