@@ -1,0 +1,75 @@
+*
+ * amprd.c - AMPR 44net Interface daemon
+ *
+ * Author: Marius Petrescu, YO2LOJ, <marius@yo2loj.ro>
+ *
+ ******************************************
+ * To my son, Marcel Petrescu (2005-2017)
+ ******************************************
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ *
+ * Version History
+ * ---------------
+ *    1.0     6.Aug.2013    First version
+ *    1.1     8.Aug.2013    Bug fix: routes were set even if set to disabled in config
+ *                          Bug fix: accepted routes with distance 15
+ *                          Bug fix: RIP entries were processed past end of packet
+ *    1.2     9.Aug.2013    Bug fix: buffer overflow on ipip read (tnx. Don Fanning)
+ *    1.3    10.Aug.2013    Bug fix: corrected a stupid error in netmask calculation
+ *    1.4    10.Aug.2013    Bug fix: corrected a bug in netmask host/network translation
+ *    1.5     3.Apr.2017    Added support for PID file
+ *                          Corrected makefile and scripts to be Fedora compliant
+ *                          Added support for BGP announced 44net endpoints
+ *    1.6     8.Apr.2017    Bug fix: Corrected host routes not being set when rip_set_routes = no
+ *                          Password is hardcoded, only needs to be set if changed
+ *                          Changed makefile not to overwrite an existing config file
+ *    2.0     2.Jun.2017    Added new AMPR default gateway
+ *                          Added calling home functionality
+ *    2.1     4.Jun.2017    Forced call home to use interface IP as source
+ *                          Support for call home on multiple interfaces
+
+DESCRIPTION
+===========
+
+This is a implemnentation of a multipoint to multipoint IPIP encapsulation
+daemon for the AMPR radio amateur network. It completly replaces the IPIP
+tunnel driver and the rip44d script or ampr-rip daemon.
+
+Routes for the target systems are distributed by 44.0.0.1 using RIPv2
+multicast messages. The daemon uses these messages to set up its tunnel
+endpoints automagically.
+
+Since these RIP multicasts are sent sent every 5 minutes, the daemon optionally
+stores these routes to disk, so they can be retreived on daemon startup.
+The file format used is the standard encap file format.
+
+RUNNING THE DAEMON
+==================
+
+If you don't need internet <-> ampr access to your system, just start the daemon
+after of course adapting the configuration file to your needs (see INSTALL).
+
+To enable internet to ampr traffic, i provided a starup script example with
+these files (startup_example.sh).
+
+I also put an example on how to start the daemon from 'interfaces' on debian-like
+systems (interfaces_example).
+
+Have fun with the hobby!
+
+Marius, YO2LOJ 
+

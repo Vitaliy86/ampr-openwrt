@@ -1,11 +1,13 @@
 --- a/amprd.c
 +++ b/amprd.c
-@@ -554,7 +554,7 @@
- 		if (
- 		    (payload > 48) &&
- 		    ((chdr->daddr == inet_addr("224.0.0.9")) && (chdr->saddr == inet_addr("44.0.0.1"))) &&  /* multicasts from 44.0.0.1 */
--		    (uhdr->source == htons(IPPORT_ROUTESERVER) &&  uhdr->dest == htons(IPPORT_ROUTESERVER)) /* port 520 (RIP) */
-+		    (uhdr->uh_sport == htons(IPPORT_ROUTESERVER) &&  uhdr->uh_dport == htons(IPPORT_ROUTESERVER)) /* port 520 (RIP) */
- 	        )
- 		{
- 		    if (debug) fprintf(stderr, "Ampr GW multicast RIPv2 received: %d bytes\n", payload - 48);
+@@ -68,6 +68,10 @@
+ #include <time.h>
+ 
++#ifndef __GLIBC__
++#define source uh_sport
++#define dest uh_dport
++#endif
++
+ #include "tunnel.h"
+ #include "list.h"
+ #include "rip.h"

@@ -1,0 +1,26 @@
+#
+# adapt and add this to your /etc/network/interfaces file
+#
+# this example assumes 2 interfaces started up by amprd,
+# ampr0 44.182.21.1/8 and ampr1 44.182.20.36/24
+# ampr1 uses table called ampr to set the internet return path
+# (add this to your /etc/iproute2/rt_tables or use numeric values)
+#
+
+auto ampr0
+iface ampr0 inet static
+address 44.182.21.1
+netmask 255.0.0.0
+pre-up amprd
+up ip route add default via 169.228.66.251 dev ampr0 onlink table default
+up ip route add default via 169.228.66.251 dev ampr1 onlink table ampr
+up ip rule add from 44.182.21.1 table default
+up ip rule add from 44.182.21.1 to 44.0.0.0/8 table main
+up ip rule add from 44.182.20.36 table ampr
+up ip rule add from 44.182.20.36 to 44.0.0.0/8 table main
+post-down killall amprd
+post-down ip rule del from 44.182.21.1 table default
+post-down ip rule del from 44.182.21.1 to 44.0.0.0/8 table main
+post-down ip rule del from 44.182.20.36 table ampr
+post-down ip rule del from 44.182.20.36 to 44.0.0.0/8 table main
+

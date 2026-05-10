@@ -1,0 +1,40 @@
+*
+ * amprd.c - AMPR 44net Interface daemon
+ *
+ * Author: Marius Petrescu, YO2LOJ, <marius@yo2loj.ro>
+ *
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ *
+
+ For installing using the default options just do:
+
+    make install
+
+ This will compile the daemon, put the executable into /usr/sbin,
+ create the folder /var/lib/amprd and put an example config file
+ named amprd.conf.example into /etc
+
+ Edit the config file to your needs (all parameters are described there)
+ and rename it to amprd.conf
+
+ If you like a custom install, edit the path of the files in "commons.h",
+ issue a 'make clean' and 'make' and setup the system to your liking.
+
+
+ Have fun with amateur radio!
+
+                                      Marius, YO2LOJ
