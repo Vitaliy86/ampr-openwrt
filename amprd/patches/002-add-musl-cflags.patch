@@ -1,9 +1,8 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -1,6 +1,8 @@
- CC ?= gcc
- CFLAGS ?= -Wall -O2
- 
-+CFLAGS += -DIPPORT_ROUTESERVER=520
-+
- all: amprd
+@@ -5,7 +5,7 @@
+ CC = gcc
+-CFLAGS = -Wall -O2
++CFLAGS = -Wall -O2 -DIPPORT_ROUTESERVER=520 -Dsource=uh_sport -Ddest=uh_dport
+ LD = gcc
+ LDFLAGS =
