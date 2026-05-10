@@ -1,5 +1,5 @@
---- /opt/openwrt/openwrt-sdk-25.12.3-mediatek-filogic_gcc-14.3.0_musl.Linux-x86_64/build_dir/target-aarch64_cortex-a53_musl/amprd-2.1/amprd.c	2017-06-04 17:37:01.000000000 +0300
-+++ /tmp/amprd.c.modified	2026-05-10 13:05:30.771395838 +0300
+--- a/amprd.c
++++ b/amprd.c
 @@ -66,6 +66,12 @@
  #include <netdb.h>
  #include <poll.h>
@@ -12,4 +12,3 @@
 +#endif
  #include <signal.h>
  #include <time.h>
- 
