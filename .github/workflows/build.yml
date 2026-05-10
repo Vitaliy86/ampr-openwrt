@@ -1,4 +1,4 @@
-name: OpenWrt 25 AMPR Build (ccache + parallel)
+name: OpenWrt 25.12.3 AMPR Build (ccache + parallel)
 
 on:
   push:
@@ -31,20 +31,44 @@ jobs:
             build-essential clang flex bison g++ gawk \
             gcc-multilib gettext git libncurses-dev \
             libssl-dev python3 rsync unzip zlib1g-dev \
-            wget file tar ccache
+            wget file tar ccache zstd
 
       - name: Download OpenWrt SDK
+        id: download_sdk
         run: |
-          wget -q \
-            https://downloads.openwrt.org/releases/25.12.2/targets/mediatek/filogic/openwrt-sdk-25.12.2-mediatek-filogic_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+          SDK_URL="https://downloads.openwrt.org/releases/25.12.3/targets/mediatek/filogic/openwrt-sdk-25.12.3-mediatek-filogic_gcc-14.3.0_musl.Linux-x86_64.tar.zst"
+          
+          echo "Downloading SDK from: $SDK_URL"
+          
+          if ! wget -q --timeout=60 --tries=3 "$SDK_URL"; then
+            echo "::error::Failed to download OpenWrt SDK"
+            exit 1
+          fi
+          
+          if [ ! -f openwrt-sdk-*.tar.zst ]; then
+            echo "::error::SDK file not found after download"
+            exit 1
+          fi
+          
+          echo "SDK downloaded successfully"
 
       - name: Extract SDK
         run: |
-          tar --zstd -xf openwrt-sdk-*.tar.zst
+          if ! tar --zstd -xf openwrt-sdk-*.tar.zst; then
+            echo "::error::Failed to extract SDK"
+            exit 1
+          fi
+          echo "SDK extracted successfully"
 
       - name: Detect SDK path
         run: |
-          echo "SDK_DIR=$(find . -maxdepth 1 -type d -name 'openwrt-sdk-*')" >> $GITHUB_ENV
+          SDK_DIR=$(find . -maxdepth 1 -type d -name 'openwrt-sdk-*')
+          if [ -z "$SDK_DIR" ]; then
+            echo "::error::SDK directory not found"
+            exit 1
+          fi
+          echo "SDK_DIR=$SDK_DIR" >> $GITHUB_ENV
+          echo "SDK directory: $SDK_DIR"
 
       # ─────────────────────────────
       # ENABLE CCACHE
@@ -60,22 +84,32 @@ jobs:
       - name: Add AMPR feed
         run: |
           echo "src-link ampr $GITHUB_WORKSPACE" >> $SDK_DIR/feeds.conf.default
+          cat $SDK_DIR/feeds.conf.default
 
       - name: Update feeds
         run: |
           cd $SDK_DIR
-          ./scripts/feeds update ampr
+          if ! ./scripts/feeds update ampr; then
+            echo "::error::Failed to update AMPR feed"
+            exit 1
+          fi
 
       - name: Install feed packages
         run: |
           cd $SDK_DIR
-          ./scripts/feeds install -a -p ampr
+          if ! ./scripts/feeds install -a -p ampr; then
+            echo "::error::Failed to install AMPR feed packages"
+            exit 1
+          fi
 
       - name: Configure build system
         run: |
           cd $SDK_DIR
           echo "CONFIG_CCACHE=y" >> .config
-          make defconfig
+          if ! make defconfig; then
+            echo "::error::Failed to configure build system"
+            exit 1
+          fi
 
       # ─────────────────────────────
       # BUILD (PARALLEL + CCACHE)
@@ -86,10 +120,17 @@ jobs:
 
           export CCACHE_DIR=$HOME/.ccache
           export PATH="/usr/lib/ccache:$PATH"
-
-          make package/amprd/compile \
-               package/ampr-ripd/compile \
-               -j$(nproc) V=s
+          
+          echo "Building with $(nproc) cores..."
+          
+          if ! make package/amprd/compile \
+                   package/ampr-ripd/compile \
+                   -j$(nproc) V=s; then
+            echo "::error::Build failed"
+            exit 1
+          fi
+          
+          echo "Build completed successfully"
 
       # ─────────────────────────────
       # STATS
@@ -100,11 +141,16 @@ jobs:
 
       - name: List artifacts
         run: |
-          find $SDK_DIR/bin/packages/ -type f -name "*.apk"
+          echo "=== Available packages ==="
+          find $SDK_DIR/bin/packages/ -type f \( -name "*.ipk" -o -name "*.apk" \) 2>/dev/null || echo "No packages found"
+          echo "=== Directory structure ==="
+          ls -la $SDK_DIR/bin/packages/ 2>/dev/null || echo "bin/packages not found"
 
-      - name: Upload APKs
+      - name: Upload packages
         uses: actions/upload-artifact@v4
+        if: success()
         with:
-          name: ampr-openwrt-apk
+          name: ampr-openwrt-packages
           path: |
-            ${{ env.SDK_DIR }}/bin/packages/**/*.apk
+            ${{ env.SDK_DIR }}/bin/packages/**/*
+          retention-days: 30

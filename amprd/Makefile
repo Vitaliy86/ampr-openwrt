@@ -8,6 +8,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=http://www.yo2loj.ro/hamprojects
 
 PKG_HASH:=skip
+DOWNLOAD_NO_CHECK:=1
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_MAINTAINER:=Bill Hill <bugs@wbh.org>
