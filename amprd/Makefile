@@ -3,32 +3,36 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=amprd
 PKG_VERSION:=2.1
 PKG_RELEASE:=1
-PKG_SOURCE_URL:=http://www.yo2loj.ro/hamprojects
-PKG_MD5SUM:=a7afe52dc8cc32727b3340b4cfe0b2a1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
+PKG_SOURCE_URL:=http://www.yo2loj.ro/hamprojects
+
+PKG_HASH:=skip
+
+PKG_LICENSE:=GPL-2.0-only
+PKG_MAINTAINER:=Bill Hill <bugs@wbh.org>
+
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)    
-	SECTION:=net
-	CATEGORY:=Network
-	SUBMENU:=Routing and Redirection
-	TITLE:=IPIP encapsulation daemon for the AMPR network
-	MAINTAINER:=Bill Hill <bugs@wbh.org>
+define Package/amprd
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=IPIP encapsulation daemon for AMPR network
 endef
 
-define Package/$(PKG_NAME)/description
-	A user-space IPIP encapsulation daemon with automatic RIPv2 multicast processing and multiple tunnel support for the ampr network.
+define Package/amprd/description
+ A user-space IPIP encapsulation daemon with automatic
+ RIPv2 multicast processing and multiple tunnel support
+ for the AMPR network.
 endef
 
-CONFIGURE_VARS+= \
-	CC="$(TOOLCHAIN_DIR)/bin/$(TARGET_CC)"
-
-define Package/$(PKG_NAME)/install
+define Package/amprd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/usr/sbin
+	$(INSTALL_BIN) \
+		$(PKG_BUILD_DIR)/amprd \
+		$(1)/usr/sbin/
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,amprd))
