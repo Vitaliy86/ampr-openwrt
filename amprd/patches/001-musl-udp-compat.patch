@@ -1,20 +1,11 @@
 --- a/amprd.c
 +++ b/amprd.c
-@@ -1,3 +1,9 @@
-+#include <netinet/udp.h>
-+#include <arpa/inet.h>
-+
-+#ifndef IPPORT_ROUTESERVER
-+#define IPPORT_ROUTESERVER 520
-+#endif
- #include <errno.h>
- #include <fcntl.h>
- #include <net/if.h>
-@@ -554,8 +560,8 @@
--    if (uhdr->source == htons(IPPORT_ROUTESERVER) &&
--        uhdr->dest   == htons(IPPORT_ROUTESERVER))
-+    if (uhdr->uh_sport == htons(IPPORT_ROUTESERVER) &&
-+        uhdr->uh_dport == htons(IPPORT_ROUTESERVER))
- 	return;
- 
- 	/* process datagram */
+@@ -554,7 +554,7 @@
+ 		if (
+ 		    (payload > 48) &&
+ 		    ((chdr->daddr == inet_addr("224.0.0.9")) && (chdr->saddr == inet_addr("44.0.0.1"))) &&  /* multicasts from 44.0.0.1 */
+-		    (uhdr->source == htons(IPPORT_ROUTESERVER) &&  uhdr->dest == htons(IPPORT_ROUTESERVER)) /* port 520 (RIP) */
++		    (uhdr->uh_sport == htons(IPPORT_ROUTESERVER) &&  uhdr->uh_dport == htons(IPPORT_ROUTESERVER)) /* port 520 (RIP) */
+ 	        )
+ 		{
+ 		    if (debug) fprintf(stderr, "Ampr GW multicast RIPv2 received: %d bytes\n", payload - 48);
