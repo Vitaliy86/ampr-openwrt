@@ -1,4 +1,4 @@
-name: OpenWrt 25 AMPR APK Build (Parallel)
+name: OpenWrt 25 AMPR Build (ccache + parallel)
 
 on:
   push:
@@ -13,6 +13,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ─────────────────────────────
+      # CCACHE CACHE
+      # ─────────────────────────────
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.ref_name }}
+          restore-keys: |
+            ccache-${{ runner.os }}-
+
       - name: Install dependencies
         run: |
           sudo apt update
@@ -20,7 +31,7 @@ jobs:
             build-essential clang flex bison g++ gawk \
             gcc-multilib gettext git libncurses-dev \
             libssl-dev python3 rsync unzip zlib1g-dev \
-            wget file tar
+            wget file tar ccache
 
       - name: Download OpenWrt SDK
         run: |
@@ -31,10 +42,21 @@ jobs:
         run: |
           tar --zstd -xf openwrt-sdk-*.tar.zst
 
-      - name: Detect SDK
+      - name: Detect SDK path
         run: |
           echo "SDK_DIR=$(find . -maxdepth 1 -type d -name 'openwrt-sdk-*')" >> $GITHUB_ENV
 
+      # ─────────────────────────────
+      # ENABLE CCACHE
+      # ─────────────────────────────
+      - name: Enable ccache
+        run: |
+          ccache -M 5G || true
+          ccache --set-config=compression=true || true
+
+      # ─────────────────────────────
+      # ADD LOCAL FEED
+      # ─────────────────────────────
       - name: Add AMPR feed
         run: |
           echo "src-link ampr $GITHUB_WORKSPACE" >> $SDK_DIR/feeds.conf.default
@@ -52,24 +74,35 @@ jobs:
       - name: Configure build system
         run: |
           cd $SDK_DIR
+          echo "CONFIG_CCACHE=y" >> .config
           make defconfig
 
       # ─────────────────────────────
-      # PARALLEL BUILD (key part)
+      # BUILD (PARALLEL + CCACHE)
       # ─────────────────────────────
-      - name: Build AMPR packages in parallel
+      - name: Build AMPR packages
         run: |
           cd $SDK_DIR
+
+          export CCACHE_DIR=$HOME/.ccache
+          export PATH="/usr/lib/ccache:$PATH"
 
           make package/amprd/compile \
                package/ampr-ripd/compile \
                -j$(nproc) V=s
 
-      - name: Collect artifacts
+      # ─────────────────────────────
+      # STATS
+      # ─────────────────────────────
+      - name: Show ccache stats
+        run: |
+          ccache -s
+
+      - name: List artifacts
         run: |
           find $SDK_DIR/bin/packages/ -type f -name "*.apk"
 
-      - name: Upload APK artifacts
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: ampr-openwrt-apk
