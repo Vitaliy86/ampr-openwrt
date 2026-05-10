@@ -1,4 +1,4 @@
-name: OpenWrt APK Build
+name: OpenWrt 25 APK Build (AMPR)
 
 on:
   push:
@@ -16,30 +16,15 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt update
-
           sudo apt install -y \
-            build-essential \
-            clang \
-            flex \
-            bison \
-            g++ \
-            gawk \
-            gcc-multilib \
-            gettext \
-            git \
-            libncurses-dev \
-            libssl-dev \
-            python3 \
-            rsync \
-            unzip \
-            zlib1g-dev \
-            wget \
-            file \
-            tar
+            build-essential clang flex bison g++ gawk \
+            gcc-multilib gettext git libncurses-dev \
+            libssl-dev python3 rsync unzip zlib1g-dev \
+            wget file tar
 
       - name: Download OpenWrt SDK
         run: |
-          wget \
+          wget -q \
             https://downloads.openwrt.org/releases/25.12.2/targets/mediatek/filogic/openwrt-sdk-25.12.2-mediatek-filogic_gcc-14.3.0_musl.Linux-x86_64.tar.zst
 
       - name: Extract SDK
@@ -50,55 +35,46 @@ jobs:
         run: |
           echo "SDK_DIR=$(find . -maxdepth 1 -type d -name 'openwrt-sdk-*')" >> $GITHUB_ENV
 
-      - name: Link local packages
+      # ─────────────────────────────
+      # КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: FEED
+      # ─────────────────────────────
+      - name: Add local feed (AMPR repo)
         run: |
-          ln -s \
-            $GITHUB_WORKSPACE/amprd \
-            $SDK_DIR/package/amprd
-
-          ln -s \
-            $GITHUB_WORKSPACE/ampr-ripd \
-            $SDK_DIR/package/ampr-ripd
+          echo "src-link ampr $GITHUB_WORKSPACE" >> $SDK_DIR/feeds.conf.default
 
       - name: Update feeds
         run: |
           cd $SDK_DIR
+          ./scripts/feeds update ampr
 
-          ./scripts/feeds update -a
-
-      - name: Configure SDK
+      - name: Install packages from feed
         run: |
           cd $SDK_DIR
+          ./scripts/feeds install -a -p ampr
 
-          rm -f .config
-
+      - name: Prepare build config
+        run: |
+          cd $SDK_DIR
           make defconfig
 
-      - name: Build amprd
+      # ─────────────────────────────
+      # СБОРКА ПАРАЛЛЕЛЬНО
+      # ─────────────────────────────
+      - name: Build all AMPR packages (parallel)
         run: |
           cd $SDK_DIR
 
           make package/amprd/compile \
-            V=s \
-            -j$(nproc)
+            package/ampr-ripd/compile \
+            V=s -j$(nproc)
 
-      - name: Build ampr-ripd
+      - name: Show artifacts
         run: |
-          cd $SDK_DIR
+          find $SDK_DIR/bin/packages/ -type f -name "*.apk"
 
-          make package/ampr-ripd/compile \
-            V=s \
-            -j$(nproc)
-
-      - name: Show built packages
-        run: |
-          find $SDK_DIR/bin/packages/ -type f \
-            \( -name "*.apk" -o -name "*.ipk" \)
-
-      - name: Upload packages
+      - name: Upload APK packages
         uses: actions/upload-artifact@v4
         with:
-          name: openwrt-packages
+          name: ampr-openwrt-apk
           path: |
             ${{ env.SDK_DIR }}/bin/packages/**/*.apk
-            ${{ env.SDK_DIR }}/bin/packages/**/*.ipk
