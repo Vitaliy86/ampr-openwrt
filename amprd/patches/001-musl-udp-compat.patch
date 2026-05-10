@@ -1,0 +1,15 @@
+--- a/amprd.c
++++ b/amprd.c
+@@ -1,6 +1,10 @@
++#include <netinet/udp.h>
++#include <arpa/inet.h>
++
++#ifndef IPPORT_ROUTESERVER
++#define IPPORT_ROUTESERVER 520
++#endif
+
+@@ -554,8 +558,8 @@
+-    if (uhdr->source == htons(IPPORT_ROUTESERVER) &&
+-        uhdr->dest   == htons(IPPORT_ROUTESERVER))
++    if (uhdr->uh_sport == htons(IPPORT_ROUTESERVER) &&
++        uhdr->uh_dport == htons(IPPORT_ROUTESERVER))
