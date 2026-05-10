@@ -1,0 +1,9 @@
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,8 @@
+ CC ?= gcc
+ CFLAGS ?= -Wall -O2
+ 
++CFLAGS += -DIPPORT_ROUTESERVER=520
++
+ all: amprd
