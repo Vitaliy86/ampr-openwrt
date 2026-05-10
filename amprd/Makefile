@@ -31,16 +31,6 @@ endef
 
 define Package/amprd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) \
-		$(PKG_BUILD_DIR)/amprd \
-		$(1)/usr/sbin/
-endef
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC="$(TARGET_CC)" \
-		CFLAGS="$(TARGET_CFLAGS) -DIPPORT_ROUTESERVER=520 -Dsource=uh_sport -Ddest=uh_dport" \
-		all
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/amprd $(1)/usr/sbin/
 endef
 
