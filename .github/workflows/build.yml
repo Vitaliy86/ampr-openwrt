@@ -10,12 +10,13 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install packages
+      - name: Install build dependencies
         run: |
           sudo apt update
+
           sudo apt install -y \
             build-essential \
             clang \
@@ -33,50 +34,71 @@ jobs:
             unzip \
             zlib1g-dev \
             wget \
-            file
+            file \
+            tar
 
       - name: Download OpenWrt SDK
         run: |
-          wget https://downloads.openwrt.org/releases/25.12.2/targets/mediatek/filogic/openwrt-sdk-25.12.2-mediatek-filogic_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+          wget \
+            https://downloads.openwrt.org/releases/25.12.2/targets/mediatek/filogic/openwrt-sdk-25.12.2-mediatek-filogic_gcc-14.3.0_musl.Linux-x86_64.tar.zst
 
       - name: Extract SDK
         run: |
           tar --zstd -xf openwrt-sdk-*.tar.zst
 
-      - name: Detect SDK
+      - name: Detect SDK path
         run: |
           echo "SDK_DIR=$(find . -maxdepth 1 -type d -name 'openwrt-sdk-*')" >> $GITHUB_ENV
 
-      - name: Link current project
+      - name: Link local packages
         run: |
-          mkdir -p $SDK_DIR/package/custom
+          ln -s \
+            $GITHUB_WORKSPACE/amprd \
+            $SDK_DIR/package/amprd
 
           ln -s \
-            $GITHUB_WORKSPACE \
-            $SDK_DIR/package/custom/ampr-openwrt
+            $GITHUB_WORKSPACE/ampr-ripd \
+            $SDK_DIR/package/ampr-ripd
 
       - name: Update feeds
         run: |
           cd $SDK_DIR
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
 
-      - name: Configure
+          ./scripts/feeds update -a
+
+      - name: Configure SDK
         run: |
           cd $SDK_DIR
+
+          rm -f .config
+
           make defconfig
 
-      - name: Build APK
+      - name: Build amprd
         run: |
           cd $SDK_DIR
 
-          make package/custom/ampr-openwrt/compile \
+          make package/amprd/compile \
             V=s \
             -j$(nproc)
 
-      - name: Upload APK
+      - name: Build ampr-ripd
+        run: |
+          cd $SDK_DIR
+
+          make package/ampr-ripd/compile \
+            V=s \
+            -j$(nproc)
+
+      - name: Show built packages
+        run: |
+          find $SDK_DIR/bin/packages/ -type f \
+            \( -name "*.apk" -o -name "*.ipk" \)
+
+      - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
-          name: openwrt-apk
+          name: openwrt-packages
           path: |
             ${{ env.SDK_DIR }}/bin/packages/**/*.apk
+            ${{ env.SDK_DIR }}/bin/packages/**/*.ipk
