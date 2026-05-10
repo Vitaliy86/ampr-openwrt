@@ -36,12 +36,12 @@ define Package/amprd/install
 		$(1)/usr/sbin/
 endef
 
-# musl libc compatibility: UDP fields have different names
-PKG_BUILD_FLAGS += no-mips16
-PKG_BUILD_PARALLEL := 1
-
-# musl libc compatibility: UDP fields have different names
-PKG_BUILD_FLAGS += no-mips16
-PKG_BUILD_PARALLEL := 1
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
+		CFLAGS="$(TARGET_CFLAGS) -DIPPORT_ROUTESERVER=520 -Dsource=uh_sport -Ddest=uh_dport" \
+		all
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/amprd $(1)/usr/sbin/
+endef
 
 $(eval $(call BuildPackage,amprd))
